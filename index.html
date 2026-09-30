@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Algorithm Visualizer</title>
+  <meta name="description" content="Animated sorting, searching and graph traversal with step-through controls, live counters and a side-by-side race mode.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237c83ff'/%3E%3Crect x='7' y='16' width='4' height='9' rx='1' fill='%23fff'/%3E%3Crect x='14' y='10' width='4' height='15' rx='1' fill='%23fff'/%3E%3Crect x='21' y='6' width='4' height='19' rx='1' fill='%23fbbf24'/%3E%3C/svg%3E">
+  <script>
+    try {
+      var t = localStorage.getItem('av-theme');
+      document.documentElement.dataset.theme = t || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    } catch (e) { document.documentElement.dataset.theme = 'dark'; }
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="9" fill="var(--accent)"/>
+        <rect x="7" y="16" width="4" height="9" rx="1" fill="var(--on-accent)"/>
+        <rect x="14" y="10" width="4" height="15" rx="1" fill="var(--on-accent)"/>
+        <rect x="21" y="6" width="4" height="19" rx="1" fill="#fbbf24"/>
+      </svg>
+      <div>
+        <div class="brand-name">Algorithm Visualizer</div>
+        <div class="brand-sub">See how algorithms think — and how they scale</div>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab active" data-tab="sort" role="tab">Sorting</button>
+      <button class="tab" data-tab="search" role="tab">Searching</button>
+      <button class="tab" data-tab="graph" role="tab">Graph Traversal</button>
+      <button class="tab" data-tab="race" role="tab"><span class="dot"></span>Race Mode</button>
+    </nav>
+    <div class="top-actions">
+      <button id="helpBtn" class="icon-btn" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
+      <button id="themeBtn" class="icon-btn" title="Toggle light / dark" aria-label="Toggle theme"></button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ==================== SORTING ==================== -->
+    <section class="panel active" data-panel="sort">
+      <div class="main-col">
+        <div class="card stage">
+          <div class="stage-head">
+            <div>
+              <h1 id="sort-title">Merge Sort</h1>
+              <p class="sub" id="sort-sub"></p>
+            </div>
+            <div class="legend">
+              <span><i class="sw" style="--c:var(--bar)"></i>Unsorted</span>
+              <span><i class="sw" style="--c:var(--c-compare)"></i>Compare</span>
+              <span><i class="sw" style="--c:var(--c-swap)"></i>Swap / write</span>
+              <span><i class="sw" style="--c:var(--c-pivot)"></i>Pivot / focus</span>
+              <span><i class="sw" style="--c:var(--c-sorted)"></i>Sorted</span>
+            </div>
+          </div>
+          <canvas id="sort-canvas" class="bars" aria-label="Sorting visualization"></canvas>
+          <div class="narration" id="sort-note" aria-live="polite"></div>
+        </div>
+        <div class="card player" id="sort-player"></div>
+      </div>
+
+      <aside class="side-col">
+        <div class="card">
+          <h3>Setup</h3>
+          <label class="field"><span>Algorithm</span><select id="sort-algo"></select></label>
+          <label class="field"><span>Array size <b id="sort-n-val">40</b></span><input type="range" id="sort-n" min="5" max="150" value="40"></label>
+          <label class="field"><span>Input shape</span><select id="sort-preset"></select></label>
+          <button class="btn full" id="sort-new">New array <kbd>R</kbd></button>
+        </div>
+        <div class="card">
+          <h3>Live counters</h3>
+          <div class="stats">
+            <div class="stat hot"><span>Comparisons</span><b id="sort-cmp">0</b></div>
+            <div class="stat warm"><span>Writes</span><b id="sort-wr">0</b></div>
+            <div class="stat"><span>Step</span><b id="sort-step">0</b></div>
+          </div>
+          <div class="meters">
+            <div>
+              <div class="meter-label"><span>vs. n log₂n = <b id="sort-ref-nlogn">0</b></span><b id="sort-pct-nlogn">0%</b></div>
+              <div class="meter" id="sort-m-nlogn"><i></i></div>
+            </div>
+            <div>
+              <div class="meter-label"><span>vs. n²/2 = <b id="sort-ref-n2">0</b></span><b id="sort-pct-n2">0%</b></div>
+              <div class="meter" id="sort-m-n2"><i></i></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Pseudocode</h3>
+          <ol class="code" id="sort-code"></ol>
+        </div>
+        <div class="card">
+          <h3>Complexity</h3>
+          <div id="sort-info"></div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ==================== SEARCHING ==================== -->
+    <section class="panel" data-panel="search">
+      <div class="main-col">
+        <div class="card stage">
+          <div class="stage-head">
+            <div>
+              <h1 id="search-title">Binary Search</h1>
+              <p class="sub" id="search-sub"></p>
+            </div>
+            <div class="legend">
+              <span><i class="sw" style="--c:var(--bar)"></i>Candidate</span>
+              <span><i class="sw" style="--c:var(--bar-dim)"></i>Eliminated</span>
+              <span><i class="sw" style="--c:var(--c-compare)"></i>Probe</span>
+              <span><i class="sw" style="--c:var(--c-sorted)"></i>Found</span>
+              <span><i class="sw dash" style="--c:var(--c-target)"></i>Target</span>
+            </div>
+          </div>
+          <canvas id="search-canvas" class="bars" aria-label="Searching visualization"></canvas>
+          <div class="narration" id="search-note" aria-live="polite"></div>
+        </div>
+        <div class="card player" id="search-player"></div>
+      </div>
+
+      <aside class="side-col">
+        <div class="card">
+          <h3>Setup</h3>
+          <label class="field"><span>Algorithm</span><select id="search-algo"></select></label>
+          <label class="field"><span>Array size <b id="search-n-val">40</b></span><input type="range" id="search-n" min="8" max="120" value="40"></label>
+          <label class="field"><span>Target value</span>
+            <div class="target-row">
+              <input type="number" id="search-target" min="0" max="9999" step="1" aria-label="Target value">
+              <button class="btn" id="search-present" title="Pick a value that exists">In array</button>
+              <button class="btn" id="search-missing" title="Pick a value that is missing">Missing</button>
+            </div>
+          </label>
+          <button class="btn full" id="search-new">New sorted array <kbd>R</kbd></button>
+          <div class="result" id="search-result"></div>
+        </div>
+        <div class="card">
+          <h3>Live counters</h3>
+          <div class="stats">
+            <div class="stat hot"><span>Comparisons</span><b id="search-cmp">0</b></div>
+            <div class="stat"><span>Candidates</span><b id="search-left">0</b></div>
+            <div class="stat"><span>Step</span><b id="search-step">0</b></div>
+          </div>
+          <p class="hint">Worst case for n = <b id="search-ref-n">0</b>: linear needs n comparisons, binary needs ⌊log₂n⌋+1 = <b id="search-ref-log">0</b>.</p>
+        </div>
+        <div class="card">
+          <h3>Pseudocode</h3>
+          <ol class="code" id="search-code"></ol>
+        </div>
+        <div class="card">
+          <h3>Complexity</h3>
+          <div id="search-info"></div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ==================== GRAPH ==================== -->
+    <section class="panel" data-panel="graph">
+      <div class="main-col">
+        <div class="card stage">
+          <div class="stage-head">
+            <div>
+              <h1 id="graph-title">Breadth-First Search</h1>
+              <p class="sub" id="graph-sub"></p>
+            </div>
+            <div class="legend">
+              <span><i class="sw" style="--c:var(--c-swap)"></i>Current</span>
+              <span><i class="sw" style="--c:var(--c-compare)"></i>Frontier</span>
+              <span><i class="sw" style="--c:var(--accent)"></i>Visited / tree edge</span>
+              <span><i class="sw" style="--c:var(--c-sorted)"></i>Path</span>
+            </div>
+          </div>
+          <svg id="graph-svg" class="graph-svg" role="img" aria-label="Graph"></svg>
+          <div class="narration" id="graph-note" aria-live="polite"></div>
+        </div>
+        <div class="card player" id="graph-player"></div>
+      </div>
+
+      <aside class="side-col">
+        <div class="card">
+          <h3>Setup</h3>
+          <label class="field"><span>Algorithm</span><select id="graph-algo"></select></label>
+          <div class="row">
+            <label class="field"><span>Graph size</span>
+              <select id="graph-size">
+                <option value="small">Small (15)</option>
+                <option value="medium" selected>Medium (24)</option>
+                <option value="large">Large (40)</option>
+              </select>
+            </label>
+            <label class="field"><span>Density</span><input type="range" id="graph-density" min="30" max="95" value="60"></label>
+          </div>
+          <div class="row">
+            <button class="btn" id="graph-new">New graph <kbd>R</kbd></button>
+            <button class="btn" id="graph-clear-target">Clear target</button>
+          </div>
+          <p class="hint">Start <b id="graph-start-lbl">A</b> · target <b id="graph-target-lbl">none</b><br>
+            Click a node to set the start. <kbd>Shift</kbd>+click or right-click to set a target: the search stops there and highlights the path.</p>
+        </div>
+        <div class="card">
+          <h3>Live counters</h3>
+          <div class="stats">
+            <div class="stat hot"><span>Visited</span><b id="graph-visited">0</b></div>
+            <div class="stat warm"><span>Edge checks</span><b id="graph-edges">0</b></div>
+            <div class="stat"><span>Peak size</span><b id="graph-peak">0</b></div>
+          </div>
+          <div class="sep"></div>
+          <div class="seq-head"><h3 id="graph-cont-name">Queue</h3><small id="graph-cont-hint"></small></div>
+          <div class="seq container" id="graph-cont"></div>
+          <div class="sep"></div>
+          <h3>Visit order</h3>
+          <div class="seq order" id="graph-order"></div>
+        </div>
+        <div class="card">
+          <h3>Pseudocode</h3>
+          <ol class="code" id="graph-code"></ol>
+        </div>
+        <div class="card">
+          <h3>Complexity</h3>
+          <div id="graph-info"></div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ==================== RACE ==================== -->
+    <section class="panel race" data-panel="race">
+      <div class="card">
+        <div class="race-bar">
+          <div class="group">
+            <span>Category</span>
+            <div class="seg" id="race-cat">
+              <button data-cat="sort" class="on">Sorting</button>
+              <button data-cat="search">Searching</button>
+            </div>
+          </div>
+          <div class="group" style="flex:1;min-width:260px">
+            <span>Contestants</span>
+            <div class="algo-picks" id="race-picks"></div>
+          </div>
+          <div class="group">
+            <span>Size <b id="race-n-val">50</b></span>
+            <input type="range" id="race-n" min="10" max="200" value="50">
+          </div>
+          <div class="group" id="race-preset-wrap">
+            <span>Input shape</span>
+            <select id="race-preset"></select>
+          </div>
+          <button class="btn" id="race-new">New input <kbd>R</kbd></button>
+        </div>
+        <div class="sep"></div>
+        <div class="race-controls">
+          <button class="btn primary" id="race-play"></button>
+          <button class="btn" id="race-step" title="Advance the clock by one operation (→)">+1 op</button>
+          <button class="btn" id="race-reset" title="Back to the start (Home)">Reset</button>
+          <label class="speed"><span>Speed</span><input type="range" id="race-speed" min="0" max="100" value="58"><output id="race-speed-val"></output></label>
+          <input type="range" class="race-scrub" id="race-scrub" min="0" max="1" value="0" aria-label="Race clock">
+          <div class="clock"><b id="race-clock">0</b>ops elapsed</div>
+        </div>
+        <p class="hint">Every lane gets the same input and the same budget: one clock tick = one operation (a comparison or an array write). Faster-growing algorithms visibly fall behind. <span id="race-input-desc"></span></p>
+      </div>
+
+      <div class="lanes" id="race-lanes"></div>
+
+      <div class="card results" id="race-results" hidden></div>
+
+      <div class="card">
+        <div class="lab-head">
+          <div>
+            <h2>Complexity Lab — time complexity in practice</h2>
+            <p>Runs the selected algorithms (counting only, no animation) across growing input sizes and plots the measured cost. The fitted exponent shows how each one actually scales: on log–log axes a slope of k means O(nᵏ).</p>
+          </div>
+          <div class="lab-controls">
+            <select id="lab-metric" aria-label="Metric"></select>
+            <label class="check"><input type="checkbox" id="lab-log"> log–log</label>
+            <button class="btn" id="lab-run">Re-run</button>
+          </div>
+        </div>
+        <div class="empty-state" id="lab-empty">Measuring…</div>
+        <div id="lab-chart" hidden>
+          <div class="chart-wrap">
+            <canvas class="chart" id="lab-canvas"></canvas>
+            <div class="tooltip" id="lab-tip" hidden></div>
+          </div>
+          <div class="lab-legend" id="lab-legend"></div>
+        </div>
+        <p class="hint lab-status" id="lab-status"></p>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="help">
+    <h2>Keyboard shortcuts</h2>
+    <div class="keys">
+      <div><kbd>Space</kbd></div><div>Play / pause</div>
+      <div><kbd>←</kbd> <kbd>→</kbd></div><div>Step back / forward (hold <kbd>Shift</kbd> for ×10)</div>
+      <div><kbd>Home</kbd> <kbd>End</kbd></div><div>Jump to first / last step</div>
+      <div><kbd>R</kbd></div><div>New random input</div>
+      <div><kbd>1</kbd>–<kbd>4</kbd></div><div>Switch section</div>
+      <div><kbd>?</kbd></div><div>This help</div>
+    </div>
+    <button class="btn primary full" id="helpClose">Got it</button>
+  </dialog>
+
+  <script src="js/core.js"></script>
+  <script src="js/algorithms.js"></script>
+  <script src="js/views.js"></script>
+  <script src="js/tabs.js"></script>
+  <script src="js/race.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
